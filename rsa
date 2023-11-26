@@ -1,42 +1,48 @@
-#!/usr/bin/perl
-use strict;
-use warnings;
+#!/usr/bin/env bash
 
-# Check if a number is prime
-sub is_prime {
-    my ($n) = @_;
-    return 0 if $n <= 1;
-    return 1 if $n <= 3;
-    return 0 if ($n % 2 == 0 || $n % 3 == 0);
-    for (my $i = 5; $i * $i <= $n; $i += 6) {
-        return 0 if ($n % $i == 0 || $n % ($i + 2) == 0);
-    }
-    return 1;
+check_factor()
+{
+	if [ $# -ne 3 ];
+        then
+                args=("$@")
+                count=0
+                num2=1
+                for a in ${args[*]};
+                do
+                        if [ $count -gt 1 ];
+                        then
+                                num2=$(echo $a*$num2 | bc)
+                        fi
+                        count=$((count + 1))
+                done
+        else
+                num2=$3
+        fi
+
+        num1=$2
+        num=$(echo "$1" | tr ':' '=')
+
+        result=$(echo "if($num2 > $num1) 1 else 0" | bc)
+	        if ((result == 1)); then
+		        numcp=$num1
+		        num1=$num2
+		        num2=$numcp
+                fi
+
+        echo "$num$num1*$num2"
 }
 
-# Function to find prime factors
-sub prime_factorize {
-    my ($n) = @_;
-    for (my $i = 2; $i <= $n / 2; $i++) {
-        if ($n % $i == 0 && is_prime($i) && is_prime($n / $i)) {
-            return ($i, $n / $i);
-        }
-    }
-    return (1, $n);  # Return the number itself if no factors found
-}
+if [ $# -ne 1 ]
+then
+        echo 'Usage: rsa <file>'
+        exit 1
+else
 
-# Main program
-sub main {
-    my $file = $ARGV[0] or die "Usage: $0 <file>\n";
-    open(my $fh, '<', $file) or die "Could not open file '$file' $!";
+        while read i
+        do
 
-    while (my $number = <$fh>) {
-        chomp $number;
-        my ($factor1, $factor2) = prime_factorize($number);
-        print "$number=$factor1*$factor2\n";
-    }
+                result=$(factor "$i")
+                check_factor $result
 
-    close($fh);
-}
-
-main();
+        done < "$1"
+fi
